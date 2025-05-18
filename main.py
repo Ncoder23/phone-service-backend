@@ -60,28 +60,29 @@ def get_twilio_token(identity: str = Query(...)):
     return {"token": token.to_jwt()}
 
 
-class CallRequest(BaseModel):
-    To: str
-    From: str
+# class CallRequest(BaseModel):
+#     to: str
+#     from: str
 
 
 @app.post("/voice")
 async def voice_handler(
-    call_request: CallRequest
+    call_request
 ):
-    logger.info(
-        f"[VOICE] Incoming call: From={call_request.From}, To={call_request.To}")
-
+    call_request = call_request.dict()
+    logger.info(f"[VOICE] Call request: {call_request}")
     response = VoiceResponse()
-    dial = Dial(caller_id=call_request.From)
+    dial = Dial(caller_id=call_request["from"])
 
     try:
-        if call_request.To.startswith('+'):  # outbound phone number
-            logger.info(f"[DIAL] Dialing external number: {call_request.To}")
-            dial.append(Number(call_request.To))  # ✅ Append a Number object
+        if call_request["to"].startswith('+'):  # outbound phone number
+            logger.info(
+                f"[DIAL] Dialing external number: {call_request["to"]}")
+            dial.append(Number(call_request["to"]))  # ✅ Append a Number object
         else:
-            logger.info(f"[DIAL] Dialing Twilio Client ID: {call_request.To}")
-            dial.append(Client(call_request.To))  # ✅ Append a Client object
+            logger.info(
+                f"[DIAL] Dialing Twilio Client ID: {call_request["to"]}")
+            dial.append(Client(call_request["to"]))  # ✅ Append a Client object
 
         response.append(dial)
 
