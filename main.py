@@ -73,31 +73,42 @@ def get_twilio_token(identity: str = Query(...)):
 @app.post("/voice")
 async def voice_handler(request: Request):
     logger.info(f"[VOICE] Request: {request}")
-    logger.info(f"[VOICE] Request form: {request.form}")
-    logger.info(f"[VOICE] Request query: {request.query_params}")
-    logger.info(f"[VOICE] Request headers: {request.headers}")
-    logger.info(f"[VOICE] Request body: {await request.body()}")
-    logger.info(f"[VOICE] Request cookies: {request.cookies}")
-    logger.info(f"[VOICE] Request files: {request.files}")
-    logger.info(f"[VOICE] Request path: {request.url.path}")
-    call_request = await request.json()
-    logger.info(f"[VOICE] Call request: {call_request}")
+
+    # Get form data
+    form_data = await request.body()
+    # Convert bytes to string and log it
+    form_data_str = form_data.decode('utf-8')
+    logger.info(f"[VOICE] Form data: {form_data_str}")
+
+    # Parse form data
+    from_number = None
+    to_number = None
+
+    # Split the form data string by '&' to get key-value pairs
+    form_pairs = form_data_str.split('&')
+    for pair in form_pairs:
+        if pair.startswith('From='):
+            from_number = pair.split('=')[1].replace(
+                '%3A', ':')  # Replace URL encoded ':'
+        elif pair.startswith('To='):
+            to_number = pair.split('=')[1].replace(
+                '%2B', '+')    # Replace URL encoded '+'
+
+    logger.info(f"[VOICE] From: {from_number}, To: {to_number}")
+
     response = VoiceResponse()
-    dial = Dial(caller_id=call_request.get("from"))
+    dial = Dial(caller_id=from_number)
 
     try:
-        if call_request.get("to", "").startswith('+'):  # outbound phone number
-            logger.info(
-                f"[DIAL] Dialing external number: {call_request['to']}")
-            dial.append(Number(call_request["to"]))  # ✅ Append a Number object
+        if to_number.startswith('+'):  # outbound phone number
+            logger.info(f"[DIAL] Dialing external number: {to_number}")
+            dial.append(Number(to_number))
         else:
-            logger.info(
-                f"[DIAL] Dialing Twilio Client ID: {call_request['to']}")
-            dial.append(Client(call_request["to"]))  # ✅ Append a Client object
+            logger.info(f"[DIAL] Dialing Twilio Client ID: {to_number}")
+            dial.append(Client(to_number))
 
         response.append(dial)
 
-        # ✅ Return the TwiML XML string explicitly
         logger.info(f"[RESPONSE] {response}")
         return Response(content=str(response), media_type="application/xml")
 
@@ -105,5 +116,5 @@ async def voice_handler(request: Request):
         logger.error(f"[ERROR] Failed to process call: {e}")
         fallback = VoiceResponse()
         fallback.say(
-            "We’re sorry, an error occurred while connecting your call.")
+            "We're sorry, an error occurred while connecting your call.")
         return Response(content=str(fallback), media_type="application/xml")
