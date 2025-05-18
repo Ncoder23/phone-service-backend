@@ -1,4 +1,3 @@
-from ast import Num
 from pydantic import BaseModel
 from fastapi import FastAPI, Form, Request
 from twilio.twiml.voice_response import VoiceResponse, Dial, Number, Client
@@ -77,6 +76,7 @@ async def voice_handler(request: Request):
 
     # Get form data
     form_data = await request.body()
+    logger.info(f"[VOICE] Form data: {form_data}")
     # Convert bytes to string and log it
     form_data_str = form_data.decode('utf-8')
     logger.info(f"[VOICE] Form data: {form_data_str}")
@@ -98,19 +98,17 @@ async def voice_handler(request: Request):
     logger.info(f"[VOICE] From: {from_number}, To: {to_number}")
 
     response = VoiceResponse()
-    response.dial(Number(to_number))
-    response.say("Hello, this is a test call.")
-    # dial = Dial(caller_id=from_number)
+    dial = Dial(caller_id=from_number)
 
     try:
-        # if to_number.startswith('+'):  # outbound phone number
-        #     logger.info(f"[DIAL] Dialing external number: {to_number}")
-        #     dial.append(Number(to_number))
-        # else:
-        #     logger.info(f"[DIAL] Dialing Twilio Client ID: {to_number}")
-        #     dial.append(Client(to_number))
+        if to_number.startswith('+'):  # outbound phone number
+            logger.info(f"[DIAL] Dialing external number: {to_number}")
+            dial.append(Number(to_number))
+        else:
+            logger.info(f"[DIAL] Dialing Twilio Client ID: {to_number}")
+            dial.append(Client(to_number))
 
-        # response.append(dial)
+        response.append(dial)
 
         logger.info(f"[RESPONSE] {response}")
         return Response(content=str(response), media_type="application/xml")
