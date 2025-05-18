@@ -88,9 +88,9 @@ async def voice_handler(request: Request):
     # Split the form data string by '&' to get key-value pairs
     form_pairs = form_data_str.split('&')
     for pair in form_pairs:
-        if pair.startswith('From='):
+        if pair.startswith('_From_Number='):
             from_number = pair.split('=')[1].replace(
-                '%3A', ':')  # Replace URL encoded ':'
+                '%2B', '+')  # Replace URL encoded ':'
         elif pair.startswith('To='):
             to_number = pair.split('=')[1].replace(
                 '%2B', '+')    # Replace URL encoded '+'
