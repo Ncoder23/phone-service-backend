@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from fastapi import FastAPI, Form, Request
 from twilio.twiml.voice_response import VoiceResponse, Dial, Number, Client
 from fastapi.responses import Response
@@ -59,23 +60,28 @@ def get_twilio_token(identity: str = Query(...)):
     return {"token": token.to_jwt()}
 
 
+class CallRequest(BaseModel):
+    To: str
+    From: str
+
+
 @app.post("/voice")
 async def voice_handler(
-    To: str = Query(...),
-    From: str = Query(...),
+    call_request: CallRequest
 ):
-    logger.info(f"[VOICE] Incoming call: From={From}, To={To}")
+    logger.info(
+        f"[VOICE] Incoming call: From={call_request.From}, To={call_request.To}")
 
     response = VoiceResponse()
-    dial = Dial(caller_id=From)
+    dial = Dial(caller_id=call_request.From)
 
     try:
-        if To.startswith('+'):  # outbound phone number
-            logger.info(f"[DIAL] Dialing external number: {To}")
-            dial.append(Number(To))  # ✅ Append a Number object
+        if call_request.To.startswith('+'):  # outbound phone number
+            logger.info(f"[DIAL] Dialing external number: {call_request.To}")
+            dial.append(Number(call_request.To))  # ✅ Append a Number object
         else:
-            logger.info(f"[DIAL] Dialing Twilio Client ID: {To}")
-            dial.append(Client(To))  # ✅ Append a Client object
+            logger.info(f"[DIAL] Dialing Twilio Client ID: {call_request.To}")
+            dial.append(Client(call_request.To))  # ✅ Append a Client object
 
         response.append(dial)
 
