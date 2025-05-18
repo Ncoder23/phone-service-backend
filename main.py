@@ -37,6 +37,11 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+
+
 @app.get("/token")
 def get_twilio_token(identity: str = Query(...)):
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
@@ -77,11 +82,11 @@ async def voice_handler(
     try:
         if call_request["to"].startswith('+'):  # outbound phone number
             logger.info(
-                f"[DIAL] Dialing external number: {call_request["to"]}")
+                f"[DIAL] Dialing external number: {call_request['to']}")
             dial.append(Number(call_request["to"]))  # ✅ Append a Number object
         else:
             logger.info(
-                f"[DIAL] Dialing Twilio Client ID: {call_request["to"]}")
+                f"[DIAL] Dialing Twilio Client ID: {call_request['to']}")
             dial.append(Client(call_request["to"]))  # ✅ Append a Client object
 
         response.append(dial)
