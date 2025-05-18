@@ -71,14 +71,14 @@ def get_twilio_token(identity: str = Query(...)):
 
 
 @app.post("/voice")
-async def voice_handler(**kwargs):
-    call_request = kwargs.dict()
+async def voice_handler(request: Request):
+    call_request = await request.json()
     logger.info(f"[VOICE] Call request: {call_request}")
     response = VoiceResponse()
-    dial = Dial(caller_id=call_request["from"])
+    dial = Dial(caller_id=call_request.get("from"))
 
     try:
-        if call_request["to"].startswith('+'):  # outbound phone number
+        if call_request.get("to", "").startswith('+'):  # outbound phone number
             logger.info(
                 f"[DIAL] Dialing external number: {call_request['to']}")
             dial.append(Number(call_request["to"]))  # ✅ Append a Number object
