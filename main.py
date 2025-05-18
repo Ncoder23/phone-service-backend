@@ -71,10 +71,8 @@ def get_twilio_token(identity: str = Query(...)):
 
 
 @app.post("/voice")
-async def voice_handler(
-    call_request
-):
-    call_request = call_request.dict()
+async def voice_handler(**kwargs):
+    call_request = kwargs.dict()
     logger.info(f"[VOICE] Call request: {call_request}")
     response = VoiceResponse()
     dial = Dial(caller_id=call_request["from"])
